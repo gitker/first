@@ -84,7 +84,7 @@ class TCPHandler(object):
 		self._parse_header(self._header)
 
 	def _write_to_file(self,data):
-		self._data.append(data)
+	#	self._data.append(data)
 		self._fd.write(data)
 		
 		self._flen -= len(data)
@@ -111,7 +111,7 @@ class TCPHandler(object):
 		if self._flen == self._data_appending_len:
 			self._write_to_file(b''.join(self._data_appending))
 			print("finished")
-			print(len(b''.join(self._data)))
+		#	print(len(b''.join(self._data)))
 			self.destroy()
 
 
