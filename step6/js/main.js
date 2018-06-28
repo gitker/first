@@ -82,8 +82,8 @@ socket.on('message', function (message){
       candidate: message.candidate
     });
     pc.addIceCandidate(candidate);
-  } else if (message === 'bye' && isStarted) {
-    handleRemoteHangup();
+  } else if (message.type === 'bye' && isStarted) {
+   stop();
   }
 });
 
@@ -125,7 +125,7 @@ function maybeStart() {
 }
 
 window.onbeforeunload = function(e){
-	socket.emit('disconnect', user);
+  sendMessage({type:'bye',user:usr});
 }
 
 /////////////////////////////////////////////////////////
@@ -202,8 +202,7 @@ function handleRemoteStreamRemoved(event) {
 
 function hangup() {
   console.log('Hanging up.');
-  stop();
-  socket.emit('disconnect', user);
+  sendMessage({type:'bye',user:usr});
 }
 
 function handleRemoteHangup() {

@@ -34,25 +34,19 @@ io.sockets.on('connection', function (socket){
 	socket.on('message', function (message) {
 		log('Got message: ', message);
 		// For a real app, should be room only (not broadcast)
+
+		if(message.type =='bye'){
+			log('disconnect: ', message.user);
+			if( roomInfo[roomID]){
+				roomInfo[roomID].delete(message.user);
+			}
+			socket.leave(roomID);  
+		}
 		
 		socket.broadcast.emit('message', message);
 	});
 
-	socket.on('disconnect', function (user) {
-    // 从房间名单中移除
-    if(roomInfo[roomID]){
-			roomInfo[roomID].delete(user);
-		}
-		if(roomInfo[roomID].size == 0){
-			roomInfo[roomID]=null;
-		}
-     
-    socket.leave(roomID);    // 退出房间
-		io.sockets.to(roomID).emit('sys', user + '退出了房间');
-   
-  });
-
-
+	
 
 	socket.on('create or join', function (user) {
 		//var numClients = io.of('/').in(room).clients.length;
