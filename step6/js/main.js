@@ -8,8 +8,8 @@ var pc;
 var remoteStream;
 var turnReady;
 
-var pc_config = {'iceServers': [{'url': 'stun:stun.l.google.com:19302'},
-                        {'url':"turn:118.24.135.37","credential":"123",'username': 'we'}
+var pc_config = {'iceServers': [//{'url': 'stun:stun.l.google.com:19302'},
+                        {'url':"turn:118.24.135.37","credential":"1233",'username': 'we'}
 ]};
 
 var pc_constraints = {'optional': [{'DtlsSrtpKeyAgreement': true}]};
