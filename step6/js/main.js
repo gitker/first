@@ -8,9 +8,18 @@ var pc;
 var remoteStream;
 var turnReady;
 
-var pc_config = {'iceServers': [{'url': 'stun:stun.freeswitch.org'},
-{'url': 'stun:stun.xten.com'},{'url': 'stun:stun.ekiga.net'}
+//var pc_config = {'iceServers': [{'url': 'stun:stun.freeswitch.org'},
+//{'url': 'stun:stun.xten.com'},{'url': 'stun:stun.ekiga.net'}
+//]};
+
+var pc_config ={'iceServers': [
+    {
+      urls: "turn:118.24.135.37", 
+      credential: "ling1234", 
+      username: "ling"
+    }
 ]};
+
 
 var pc_constraints = {'optional': [{'DtlsSrtpKeyAgreement': true}]};
 
