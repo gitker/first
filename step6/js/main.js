@@ -13,11 +13,14 @@ var turnReady;
 //]};
 
 var pc_config ={'iceServers': [
-    {
-      urls: "turn:118.24.135.37", 
-      credential: "ling1234", 
-      username: "ling"
-    }
+  {'url': 'stun:stun.freeswitch.org'},
+  {'url': 'stun:stun.xten.com'},
+  {'url': 'stun:stun.ekiga.net'},
+  {
+    urls: "turn:118.24.135.37", 
+    credential: "ling1234", 
+    username: "ling"
+  }
 ]};
 
 
