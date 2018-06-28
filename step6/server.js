@@ -14,6 +14,9 @@ var app = https.createServer(options,function (req, res) {
 }).listen(8080);
 
 var io = require('socket.io').listen(app);
+
+var roomInfo = {};
+
 io.sockets.on('connection', function (socket){
 
 	function log(){
@@ -24,33 +27,51 @@ io.sockets.on('connection', function (socket){
 	    socket.emit('log', array);
 	}
 
+	
+	var	roomID = "foo";
+	
+
 	socket.on('message', function (message) {
 		log('Got message: ', message);
-    // For a real app, should be room only (not broadcast)
+		// For a real app, should be room only (not broadcast)
+		
 		socket.broadcast.emit('message', message);
 	});
 
-	socket.on('create or join', function (room) {
-		var numClients 
-		io.of('/').in(room).clients(function(error,clients){
-			 numClients=clients.length;
-	});
-
-		log('Room ' + room + ' has ' + numClients + ' client(s)');
-		log('Request to create or join room', room);
-
-		if (numClients == 0){
-			socket.join(room);
-			socket.emit('created', room);
-		} else if (numClients == 1) {
-			io.sockets.in(room).emit('join', room);
-			socket.join(room);
-			socket.emit('joined', room);
-		} else { // max two clients
-			socket.emit('full', room);
+	socket.on('disconnect', function (user) {
+    // 从房间名单中移除
+    if(roomInfo[roomID]){
+			roomInfo[roomID].delete(user);
 		}
-		socket.emit('emit(): client ' + socket.id + ' joined room ' + room);
-		socket.broadcast.emit('broadcast(): client ' + socket.id + ' joined room ' + room);
+		if(roomInfo[roomID].size == 0){
+			roomInfo[roomID]=null;
+		}
+     
+    socket.leave(roomID);    // 退出房间
+		io.sockets.to(roomID).emit('sys', user + '退出了房间');
+   
+  });
+
+
+
+	socket.on('create or join', function (user) {
+		//var numClients = io.of('/').in(room).clients.length;
+		if (!roomInfo[roomID]) {
+      roomInfo[roomID] = new Set();
+		}
+		
+		if(roomInfo[roomID].size == 0){
+			roomInfo[roomID].add(user);
+			socket.join(roomID);
+			socket.emit('created', roomID);
+		}else if(roomInfo[roomID].size == 1){
+			socket.join(roomID);
+			io.sockets.to(roomID).emit('join', user);
+			socket.emit('joined', user);
+		}else{
+			socket.emit('full', roomID);
+		}
+
 
 	});
 
