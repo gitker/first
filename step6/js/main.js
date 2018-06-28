@@ -14,6 +14,8 @@ var pc_config = {'iceServers': [{'url': 'stun:stun.l.google.com:19302'},
 
 var pc_constraints = {'optional': [{'DtlsSrtpKeyAgreement': true}]};
 
+var constraints = {video: true,audio:true};
+
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {'mandatory': {
   'OfferToReceiveAudio':true,
@@ -112,7 +114,7 @@ function handleUserMediaError(error){
   alert('getUserMedia error: ', error);
 }
 
-var constraints = {video: true,audio:true};
+
 getUserMedia(constraints, handleUserMedia, handleUserMediaError);
 
 console.log('Getting user media with constraints', constraints);
