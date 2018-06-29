@@ -195,6 +195,7 @@ function handleRemoteStreamAdded(event) {
   console.log('Remote stream added.');
   remoteVideo.src = window.URL.createObjectURL(event.stream);
   remoteStream = event.stream;
+  localVideo.hidden = true;
 }
 
 function handleRemoteStreamRemoved(event) {
@@ -212,6 +213,7 @@ function stop() {
   isStarted = false;
   // isAudioMuted = false;
   // isVideoMuted = false;
+  localVideo.hidden = false;
  if(pc)
    pc.close();
   pc = null;
