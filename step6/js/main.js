@@ -41,20 +41,14 @@ var usr = new Date().toLocaleString( );
 var socket = io.connect();
 
 
-socket.emit('create or join', usr);
-
-socket.on('created', function (room){
-  console.log('Created room ' + room);
-  isInitiator = true;
-});
-
 socket.on('full', function (room){
-  console.log('Room ' + room + ' is full');
+  alert('Room ' + room + ' is full');
 });
 
 socket.on('join', function (user){
   console.log('Another peer made a request to join  ' + user);
   isChannelReady = true;
+  maybeStart();
 });
 
 socket.on('joined', function (user){
@@ -78,23 +72,21 @@ function sendMessage(message){
 
 socket.on('message', function (message){
   console.log('Client received message:', message);
-  if (message === 'got user media') {
-  	maybeStart();
-  } else if (message.type === 'offer') {
-    if (!isInitiator && !isStarted) {
-      maybeStart();
+  if (message.type === 'offer') {
+    if(!createPeerConnection()){
+      return;
     }
     pc.setRemoteDescription(new RTCSessionDescription(message));
     doAnswer();
-  } else if (message.type === 'answer' && isStarted) {
+  } else if (message.type === 'answer'&& isStarted ) {
     pc.setRemoteDescription(new RTCSessionDescription(message));
-  } else if (message.type === 'candidate' && isStarted) {
+  } else if (message.type === 'candidate' && isStarted)  {
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.label,
       candidate: message.candidate
     });
     pc.addIceCandidate(candidate);
-  } else if (message.type === 'bye' && isStarted) {
+  } else if (message.type === 'bye')  {
    stop();
   }
 });
@@ -108,14 +100,11 @@ function handleUserMedia(stream) {
   console.log('Adding local stream.');
   localVideo.src = window.URL.createObjectURL(stream);
   localStream = stream;
-  sendMessage('got user media');
-  if (isInitiator) {
-    maybeStart();
-  }
+  socket.emit('join', usr);
 }
 
 function handleUserMediaError(error){
-  alert('getUserMedia error: ', error);
+  alert('getUserMedia error: '+ error);
 }
 
 
@@ -125,15 +114,10 @@ console.log('Getting user media with constraints', constraints);
 
 
 function maybeStart() {
-  if (!isStarted && typeof localStream != 'undefined' && isChannelReady) {
-    createPeerConnection();
-    pc.addStream(localStream);
+    if (!createPeerConnection())
+       return false;
     isStarted = true;
-    console.log('isInitiator', isInitiator);
-    if (isInitiator) {
-      doCall();
-    }
-  }
+    doCall();
 }
 
 window.onbeforeunload = function(e){
@@ -143,16 +127,21 @@ window.onbeforeunload = function(e){
 /////////////////////////////////////////////////////////
 
 function createPeerConnection() {
+  if (pc)
+  return true;
   try {
     pc = new RTCPeerConnection(pc_config);
     pc.onicecandidate = handleIceCandidate;
     pc.onaddstream = handleRemoteStreamAdded;
     pc.onremovestream = handleRemoteStreamRemoved;
+    pc.addStream(localStream);
     console.log('Created RTCPeerConnnection');
+    return  true;
   } catch (e) {
     console.log('Failed to create PeerConnection, exception: ' + e.message);
-    alert('Cannot create RTCPeerConnection object.');
-      return;
+    hangup();
+    alert('Cannot create RTCPeerConnection object.' + e.message);
+    return false;
   }
 }
 
@@ -175,11 +164,11 @@ function handleRemoteStreamAdded(event) {
   remoteStream = event.stream;
 }
 
-function handleCreateOfferError(event){
+function handleCreateOfferError(e){
   console.log('createOffer() error: ', e);
 }
 
-function handleCreateAnswerError(event){
+function handleCreateAnswerError(e){
   console.log('createAnswer() error: ', e);
 }
 
@@ -215,18 +204,15 @@ function handleRemoteStreamRemoved(event) {
 function hangup() {
   console.log('Hanging up.');
   sendMessage({type:'bye',user:usr});
+  stop();
 }
 
-function handleRemoteHangup() {
-//  console.log('Session terminated.');
-  // stop();
-  // isInitiator = false;
-}
 
 function stop() {
   isStarted = false;
   // isAudioMuted = false;
   // isVideoMuted = false;
-  pc.close();
+ if(pc)
+   pc.close();
   pc = null;
 }

@@ -43,24 +43,27 @@ io.sockets.on('connection', function (socket){
 			socket.leave(roomID);  
 		}
 		
-		socket.broadcast.emit('message', message);
+		socket.broadcast.to(roomID).emit('message', message);
 	});
 
 	
 
-	socket.on('create or join', function (user) {
+	socket.on('join', function (user) {
 		//var numClients = io.of('/').in(room).clients.length;
 		if (!roomInfo[roomID]) {
       roomInfo[roomID] = new Set();
 		}
+
+		console.log("room size is "+roomInfo[roomID].size);
 		
 		if(roomInfo[roomID].size == 0){
 			roomInfo[roomID].add(user);
 			socket.join(roomID);
-			socket.emit('created', roomID);
+			socket.emit('joined', user);
 		}else if(roomInfo[roomID].size == 1){
+			roomInfo[roomID].add(user);
 			socket.join(roomID);
-			io.sockets.to(roomID).emit('join', user);
+			socket.broadcast.to(roomID).emit('join', user);
 			socket.emit('joined', user);
 		}else{
 			socket.emit('full', roomID);
