@@ -1,0 +1,12 @@
+# Server related settings
+address: 0.0.0.0
+port: 8081
+auth: false
+tls: false
+cert: cert.pem
+key: key.pem
+prefix: /
+modify: true
+scope: .
+rules: []
+
