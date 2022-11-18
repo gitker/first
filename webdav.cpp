@@ -24,7 +24,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <string.h>
-#include <zlib.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -37,17 +36,16 @@
 #include <iostream>
 using namespace std;
 
+static int log = 0;
 
-static int log=0;
-
-#define BC_LOG(fmt, arg...)\
-	do\
-	{\
-		if (log)\
-		{\
-			printf(fmt, ##arg);\
-		}\
-	}while(0)
+#define BC_LOG(fmt, arg...)     \
+    do                          \
+    {                           \
+        if (log)                \
+        {                       \
+            printf(fmt, ##arg); \
+        }                       \
+    } while (0)
 
 struct file
 {
@@ -135,56 +133,63 @@ string get_name(string href)
 
 int get_val(unsigned char c)
 {
-    if(c>='0'&&c<='9')
+    if (c >= '0' && c <= '9')
     {
-        return c-'0';
+        return c - '0';
     }
-    if(c>='A'&&c<='F')
+    if (c >= 'A' && c <= 'F')
     {
-        return c-'A'+10;
+        return c - 'A' + 10;
     }
-    if(c>='a'&&c<='f')
+    if (c >= 'a' && c <= 'f')
     {
-        return c-'a'+10;
+        return c - 'a' + 10;
     }
     return 0;
 }
 
-unsigned char val(unsigned char*p)
+unsigned char val(unsigned char *p)
 {
-    return get_val(p[0])*16+get_val(p[1]);
+    return get_val(p[0]) * 16 + get_val(p[1]);
 }
 
-char *urlDecode( const char *str) {
+char *urlDecode(const char *str)
+{
 
     int maxlen = strlen(str);
-    char *res = (char*)calloc(maxlen+1,1);
-    unsigned char *p=(unsigned char*)res;
-    unsigned char *src=(unsigned char*)str;
+    char *res = (char *)calloc(maxlen + 1, 1);
+    unsigned char *p = (unsigned char *)res;
+    unsigned char *src = (unsigned char *)str;
 
-    for(int i=0;i<maxlen;)
+    for (int i = 0; i < maxlen;)
     {
-        if(src[i]=='%')
+        if (src[i] == '%')
         {
-            if(i+2>=maxlen) break;
-            *p = val((unsigned char*)src+i+1);
+            if (i + 2 >= maxlen)
+                break;
+            *p = val((unsigned char *)src + i + 1);
             p++;
-            i+=3;
-        }else
+            i += 3;
+        }
+        else
         {
-            *p=src[i];
+            *p = src[i];
             p++;
-            i+=1;
+            i += 1;
         }
     }
 
-   return res;
+    return res;
 }
 
 void format_file(string href, struct stat stbuf, string name, string &res)
 {
     file f;
     char flen[128];
+    if(S_ISCHR(stbuf.st_mode))
+    {
+        stbuf.st_size = 1024;
+    }
     sprintf(flen, "%llu", (unsigned long long)stbuf.st_size);
     f.name = name;
     f.etag = "12345";
@@ -195,7 +200,10 @@ void format_file(string href, struct stat stbuf, string name, string &res)
 
 void write_str(int fd, const char *a)
 {
-    write(fd, a, strlen(a));
+    if(write(fd, a, strlen(a)) != strlen(a))
+    {
+        exit(0);
+    }
 }
 
 void write_404(int fd)
@@ -217,41 +225,45 @@ void write_errcode(int fd, int err)
 
 int is_unreseved(char a)
 {
-    if(a=='-'||a=='.'||a=='_'||a=='\"')
+    if (a == '-' || a == '.' || a == '_' || a == '\"')
     {
         return 1;
     }
-    if(a>='a'&&a<='z') return 1;
-    if(a>='A'&&a<='Z') return 1;
-    if(a>='0'&&a<='9') return 1;
+    if (a >= 'a' && a <= 'z')
+        return 1;
+    if (a >= 'A' && a <= 'Z')
+        return 1;
+    if (a >= '0' && a <= '9')
+        return 1;
 
     return 0;
 }
 
 string to_url(char *str)
 {
-    string res="";
+    string res = "";
     int len = strlen(str);
-    for(int i=0;i<len;i++)
+    for (int i = 0; i < len; i++)
     {
         char cc[10];
-        unsigned char *p=(unsigned char*)str;
-        if(!is_unreseved(*str))
+        unsigned char *p = (unsigned char *)str;
+        if (!is_unreseved(*str))
         {
-            sprintf(cc,"%02x",*p);
-            res = res+"%"+cc;
-        }else
+            sprintf(cc, "%02x", *p);
+            res = res + "%" + cc;
+        }
+        else
         {
-            res = res+*str;
+            res = res + *str;
         }
         str++;
     }
     return res;
 }
 
-void readdir(string topdir, string href, string rhf,string &res, string depth)
+void readdir(string topdir, string href, string rhf, string &res, string depth)
 {
-    string path =  href;
+    string path = href;
 
     struct stat stbuf;
 
@@ -259,7 +271,7 @@ void readdir(string topdir, string href, string rhf,string &res, string depth)
     {
         return;
     }
-    BC_LOG("readir %s %s\n",path.c_str(),rhf.c_str());
+    BC_LOG("readir %s %s\n", path.c_str(), rhf.c_str());
 
     if ((stbuf.st_mode & S_IFMT) == S_IFDIR)
     {
@@ -296,7 +308,7 @@ void readdir(string topdir, string href, string rhf,string &res, string depth)
             {
                 dentry entry;
                 entry.name = dp->d_name;
-                add_entry(&entry, rhf + "/" +to_url(dp->d_name), res);
+                add_entry(&entry, rhf + "/" + to_url(dp->d_name), res);
             }
             else
             {
@@ -307,11 +319,11 @@ void readdir(string topdir, string href, string rhf,string &res, string depth)
     closedir(dirp);
 }
 
-void toxml(string href, string rhf,string &res, string depth)
+void toxml(string href, string rhf, string &res, string depth)
 {
     res = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
     res = res + "<D:multistatus xmlns:D=\"DAV:\">";
-    readdir(".", href,rhf, res, depth);
+    readdir(".", href, rhf, res, depth);
     res = res + "</D:multistatus>";
 }
 
@@ -320,7 +332,7 @@ void readline(int fd, string &s)
     char c;
     while (1)
     {
-        if(read(fd, &c, 1) !=1)
+        if (read(fd, &c, 1) != 1)
         {
             break;
         }
@@ -376,8 +388,6 @@ void split(vector<string> &res, string a)
     }
 }
 
-
-
 void process_get(int fd, vector<string> &request)
 {
     vector<string> cmd;
@@ -387,13 +397,17 @@ void process_get(int fd, vector<string> &request)
 
     struct stat stbuf;
 
-    string path = (char*)urlDecode(cmd[1].c_str());
-    path = "."+path;
+    string path = (char *)urlDecode(cmd[1].c_str());
+    path = "." + path;
 
     if (lstat(path.c_str(), &stbuf) < 0 || (stbuf.st_mode & S_IFMT) == S_IFDIR)
     {
         write_404(fd);
         return;
+    }
+    if(S_ISCHR(stbuf.st_mode))
+    {
+        stbuf.st_size = 1024;
     }
     sprintf(lenstr, "Content-Length: %llu\r\n", (unsigned long long)stbuf.st_size);
     write_str(fd, "HTTP/1.1 200 OK\r\n");
@@ -408,7 +422,10 @@ void process_get(int fd, vector<string> &request)
         int ret = fread(buf, 1, 4096, fp);
         if (ret > 0)
         {
-            write(fd, buf, ret);
+            if(write(fd, buf, ret)!=ret)
+            {
+                exit(0);
+            }
         }
         else
         {
@@ -418,7 +435,7 @@ void process_get(int fd, vector<string> &request)
     fclose(fp);
 }
 
-void read_content(int fd,unsigned long long length,string *res=NULL)
+void read_content(int fd, unsigned long long length, string *res = NULL)
 {
     for (int i = 0; i < length; i++)
     {
@@ -426,15 +443,15 @@ void read_content(int fd,unsigned long long length,string *res=NULL)
         if (read(fd, &c, 1) != 1)
             break;
         BC_LOG("%c", c);
-        if(res !=NULL)
+        if (res != NULL)
         {
-            *res = *res +c;
+            *res = *res + c;
         }
     }
     BC_LOG("\n");
 }
 
-void get_content_length( vector<string> &request,unsigned long long &length)
+void get_content_length(vector<string> &request, unsigned long long &length)
 {
     for (int i = 0; i < request.size(); i++)
     {
@@ -459,16 +476,16 @@ void process_profind(int fd, vector<string> &request)
     struct stat stbuf;
 
     string path = urlDecode(cmd[1].c_str());
-    path = "."+path;
+    path = "." + path;
 
-    BC_LOG("#####pro find %s\n",path.c_str());
+    BC_LOG("#####pro find %s\n", path.c_str());
 
     if (lstat(path.c_str(), &stbuf) < 0)
     {
         write_404(fd);
         return;
     }
-  
+
     for (int i = 0; i < request.size(); i++)
     {
         if (head_is(request[i], "Depth", strlen("Depth")))
@@ -481,9 +498,9 @@ void process_profind(int fd, vector<string> &request)
         }
     }
 
-    read_content(fd,length);
-   
-    toxml(path,cmd[1], res, request[depi]);
+    read_content(fd, length);
+
+    toxml(path, cmd[1], res, request[depi]);
     sprintf(lenstr, "Content-Length: %d\r\n", (int)res.size());
     write_str(fd, "HTTP/1.1 207 Multi-Status\r\n");
     write_str(fd, "Date: Mon, 18 OCt 2021 03:02:30 GMT\r\n");
@@ -498,12 +515,11 @@ void process_put(int fd, vector<string> &request)
     string res = "";
     vector<string> cmd;
     split(cmd, request[0]);
-    string path =  urlDecode(cmd[1].c_str());
-    path = "."+path;
+    string path = urlDecode(cmd[1].c_str());
+    path = "." + path;
     unsigned long long length = 0;
 
-
-    get_content_length(request,length);
+    get_content_length(request, length);
 
     BC_LOG("put content length %llu\n", length);
     FILE *fp = fopen(path.c_str(), "wb");
@@ -557,12 +573,12 @@ void process_lock(int fd, vector<string> &request)
     char lenstr[128];
     vector<string> cmd;
     split(cmd, request[0]);
-    //string path =   urlDecode(cmd[1].c_str());;
-  //  path = "."+path;
+    // string path =   urlDecode(cmd[1].c_str());;
+    //  path = "."+path;
     unsigned long long length = 0;
 
-    get_content_length(request,length);
-    read_content(fd,length);
+    get_content_length(request, length);
+    read_content(fd, length);
 
     string res;
     write_lock(res);
@@ -581,14 +597,15 @@ void process_patch(int fd, vector<string> &request)
     char lenstr[128];
     vector<string> cmd;
     split(cmd, request[0]);
-      string path =   urlDecode(cmd[1].c_str());;
-    path = "."+path;
+    string path = urlDecode(cmd[1].c_str());
+    ;
+    path = "." + path;
     unsigned long long length = 0;
     string res = "";
 
-    get_content_length(request,length);
+    get_content_length(request, length);
 
-    read_content(fd,length,&res);
+    read_content(fd, length, &res);
 
     sprintf(lenstr, "Content-Length: %d\r\n", (int)res.size());
     write_str(fd, "HTTP/1.1 200 OK\r\n");
@@ -618,10 +635,11 @@ void process_delete(int fd, vector<string> &request)
 
     struct stat stbuf;
 
-    string path =   urlDecode(cmd[1].c_str());;
-    path = "."+path;
+    string path = urlDecode(cmd[1].c_str());
+    ;
+    path = "." + path;
 
-    BC_LOG("delete %s\n",path.c_str());
+    BC_LOG("delete %s\n", path.c_str());
 
     if (lstat(path.c_str(), &stbuf) < 0)
     {
@@ -633,7 +651,10 @@ void process_delete(int fd, vector<string> &request)
         BC_LOG("####found %s\n", path.c_str());
         char cmd[512];
         sprintf(cmd, "rm -rf '%s'", path.c_str());
-        system(cmd);
+        if(system(cmd)!=0)
+        {
+            BC_LOG("rm '%s' error\n",path.c_str());
+        }
     }
 
     write_str(fd, "HTTP/1.1 200 OK\r\n");
@@ -658,7 +679,7 @@ void get_real_name(char *host, char *real)
                 get = 1;
             }
         }
-        if (get &&host[i]!='\r'&&host[i]!='\n')
+        if (get && host[i] != '\r' && host[i] != '\n')
         {
             *real = host[i];
             real++;
@@ -678,8 +699,9 @@ void process_move(int fd, vector<string> &request)
 
     struct stat stbuf;
 
-    string path =   urlDecode(cmd[1].c_str());;
-    path = "."+path;
+    string path = urlDecode(cmd[1].c_str());
+    ;
+    path = "." + path;
 
     if (lstat(path.c_str(), &stbuf) < 0)
     {
@@ -691,19 +713,23 @@ void process_move(int fd, vector<string> &request)
     {
         if (head_is(request[i], "Destination:", strlen("Destination:")))
         {
-            strcpy(dest,request[i].c_str() + strlen("Destination:"));
+            strcpy(dest, request[i].c_str() + strlen("Destination:"));
             break;
         }
     }
     BC_LOG("dest %s\n", dest);
     char real[512] = {0};
     get_real_name(dest, real);
-    BC_LOG("real %s\n",real);
+    BC_LOG("real %s\n", real);
     char *rr = urlDecode(real);
     char scmd[512];
     sprintf(scmd, "mv '%s' '%s'", path.c_str(), rr);
-    BC_LOG("#####mv %s %s\n",path.c_str(), rr);
-    system(scmd);
+    BC_LOG("#####mv %s %s\n", path.c_str(), rr);
+
+    if(system(scmd) !=0)
+    {
+        BC_LOG("move error\n");
+    }
 
     write_str(fd, "HTTP/1.1 201 Created\r\n");
     write_str(fd, "Content-Type: text/xml; chareset=utf-8\r\n");
@@ -722,8 +748,9 @@ void process_mkcol(int fd, vector<string> &request)
 
     struct stat stbuf;
 
-    string path =   urlDecode(cmd[1].c_str());;
-    path = "."+path;
+    string path = urlDecode(cmd[1].c_str());
+    ;
+    path = "." + path;
 
     if (lstat(path.c_str(), &stbuf) >= 0)
     {
@@ -734,7 +761,10 @@ void process_mkcol(int fd, vector<string> &request)
     {
         char cmd[512];
         sprintf(cmd, "mkdir '%s'", path.c_str());
-        system(cmd);
+        if(system(cmd)!=0)
+        {
+            BC_LOG("mkdir error\n");
+        }
     }
 
     write_str(fd, "HTTP/1.1 201 Created\r\n");
@@ -745,57 +775,97 @@ void process_mkcol(int fd, vector<string> &request)
 
 void cli(int fd)
 {
+
+    vector<string> request;
+    while (1)
     {
-        vector<string> request;
-        while (1)
-        {
-            string s = "";
-            readline(fd, s);
-            if (s.size() == 0)
-                break;
-            request.push_back(s);
-        }
-        if (head_is(request[0], "OPTIONS", 7))
-        {
-            write_options(fd);
-        }
-        if (head_is(request[0], "PROPFIND", 7))
-        {
-            process_profind(fd, request);
-        }
-        if (head_is(request[0], "GET", 3))
-        {
-            process_get(fd, request);
-        }
-        if (head_is(request[0], "PUT", 3))
-        {
-            process_put(fd, request);
-        }
-        if (head_is(request[0], "LOCK", 4))
-        {
-            process_lock(fd, request);
-        }
-        if (head_is(request[0], "PROPPATCH", 9))
-        {
-            process_patch(fd, request);
-        }
-        if (head_is(request[0], "UNLOCK", 6))
-        {
-            process_unlock(fd, request);
-        }
-        if (head_is(request[0], "DELETE", 6))
-        {
-            process_delete(fd, request);
-        }
-        if (head_is(request[0], "MKCOL", 5))
-        {
-            process_mkcol(fd, request);
-        }
-        if (head_is(request[0], "MOVE", 4))
-        {
-            process_move(fd, request);
-        }
+        string s = "";
+        readline(fd, s);
+        if (s.size() == 0)
+            break;
+        request.push_back(s);
     }
+    if (request.size() == 0)
+    {
+        return;
+    }
+    if (head_is(request[0], "OPTIONS", 7))
+    {
+        write_options(fd);
+    }
+    if (head_is(request[0], "PROPFIND", 7))
+    {
+        process_profind(fd, request);
+    }
+    if (head_is(request[0], "GET", 3))
+    {
+        process_get(fd, request);
+    }
+    if (head_is(request[0], "PUT", 3))
+    {
+        process_put(fd, request);
+    }
+    if (head_is(request[0], "LOCK", 4))
+    {
+        process_lock(fd, request);
+    }
+    if (head_is(request[0], "PROPPATCH", 9))
+    {
+        process_patch(fd, request);
+    }
+    if (head_is(request[0], "UNLOCK", 6))
+    {
+        process_unlock(fd, request);
+    }
+    if (head_is(request[0], "DELETE", 6))
+    {
+        process_delete(fd, request);
+    }
+    if (head_is(request[0], "MKCOL", 5))
+    {
+        process_mkcol(fd, request);
+    }
+    if (head_is(request[0], "MOVE", 4))
+    {
+        process_move(fd, request);
+    }
+}
+
+
+
+int get_addr(const char *host,char *str)
+{
+    int ret;
+    struct addrinfo hints, *addr_list, *cur;
+    int fd= -1;
+
+    /*let the process be able to handle write error,not just exit*/
+    signal(SIGPIPE, SIG_IGN);
+
+    /* Do name resolution with both IPv6 and IPv4 */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    if (getaddrinfo(host, "88", &hints, &addr_list) != 0)
+        return -1;
+
+    /* Try the sockaddrs until a connection succeeds */
+    ret = -1;
+    for (cur = addr_list; cur != NULL; cur = cur->ai_next)
+    {
+        
+        strcpy(str,inet_ntoa(((struct sockaddr_in*)cur->ai_addr)->sin_addr));
+        ret = 0;
+        break;
+       
+    }
+
+    freeaddrinfo(addr_list);
+
+    return ret;
+  
 }
 
 
@@ -808,6 +878,9 @@ int main(int argc, char *argv[])
     struct sockaddr_in client_addr;
     int sin_size, iDataNum;
 
+    char caddr[126];
+    char xaddr[126];
+
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         fprintf(stderr, "Socket error:%s\n\a", strerror(errno));
@@ -818,10 +891,12 @@ int main(int argc, char *argv[])
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(atoi(argv[1]));
 
-    if(argc>2)
+    if (argc > 2)
     {
-        log =1;
+        log = 1;
     }
+
+  
 
     int opt = 1;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,
@@ -846,8 +921,21 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Accept error:%s\n\a", strerror(errno));
             return 0;
         }
-       // fprintf(stdout, "Server get connection from %s\n", inet_ntoa(client_addr.sin_addr));
-       // fflush(stdout);
+
+        if(get_addr("snrtibi.vicp.net",caddr)!=0)
+        {
+            close(new_fd);
+            continue;
+        }
+        if(strcmp(inet_ntoa(client_addr.sin_addr),caddr) !=0)
+        {
+            printf("get bad guy %s\n",inet_ntoa(client_addr.sin_addr));
+            close(new_fd);
+            continue;
+        }
+
+        // fprintf(stdout, "Server get connection from %s\n", inet_ntoa(client_addr.sin_addr));
+        // fflush(stdout);
 
         pid_t pid = fork();
         if (pid == 0)
