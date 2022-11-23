@@ -1,0 +1,5 @@
+update-rc.d test defaults
+systemctl  enable test
+
+
+在/etc/init.d上创建了个脚本test
