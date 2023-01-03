@@ -11,4 +11,6 @@
 busybox telnetd -l /bin/bash 
 /root/first/server_linux_amd64 -l :32768 -t 127.0.0.1:22 &
 /root/first/server_linux_amd64 -l :16384 -t 127.0.0.1:23 --key tmNzuu6ILN4d &
+/root/caddy run --config /root/cfg &
+/usr/sbin/sshd -p 123 
 exit 0 
