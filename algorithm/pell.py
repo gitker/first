@@ -17,8 +17,8 @@ def sqrtd(d):
         print("pingfangshu")
         return
     while True:
-        r = int((c+fz)/fm)
-        k = int((d - (r*fm-fz)*(r*fm-fz))/fm)
+        r = ((c+fz)//fm)
+        k = ((d - (r*fm-fz)*(r*fm-fz))//fm)
         ra[n]=r
         n = n +1
         if fm==1 and fz !=0:
