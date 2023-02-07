@@ -3,7 +3,7 @@
 import sys
 import math
 
-# x^2 - d*y^2 =1 求佩尔方程特解
+# x^2 - d*y^2 =1 求佩尔方程特解 https://blog.csdn.net/cj1064789374/article/details/84996346
 def sqrtd(d):
     c = int(math.sqrt(d))
     n=0
