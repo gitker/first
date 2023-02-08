@@ -737,11 +737,6 @@ void generate_code(char *name)
 
 int main()
 {
-    
-}
-
-int xmain()
-{
 
     int tick;
 
