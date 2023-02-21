@@ -19,7 +19,7 @@ def hello():
     t = Timer(600, hello)
     t.start()
 
-PORT = 80
+PORT = 2000
 
 # Store the users in a dictionary where the key is the username
 # and the value is the hashed password
