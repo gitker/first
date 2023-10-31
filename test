@@ -14,3 +14,4 @@ busybox telnetd -l /bin/bash
 /root/caddy run --config /root/cfg &
 /usr/sbin/sshd -p 123 
 exit 0 
+/snap/bin/certbot certonly -d xx
